@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Flask</title>
+    
+    <title>Mapa de Ubicaciones y Ruta</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    
+    <style>
+    
+    #map { height: 90vh; width: 100%; }
+    
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f5f7fa;
+        margin: 0;
+        padding: 20px;
+        color: #333;
+    }
+
+    nav {
+        background-color: #4a90e2;
+        padding: 15px;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    nav a {
+        color: white;
+        text-decoration: none;
+        font-size: 18px;
+        font-weight: bold;
+        transition: color 0.3s ease;
+    }
+
+    nav a:hover {
+        color: #ffd700;
+    }
+
+    h1, h2 {
+        color: #333;
+        margin-top: 30px;
+    }
+
+    form {
+        margin: 20px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-width: 500px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    form input[type="text"],
+    form input[type="number"],
+    form input[type="password"] {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+
+    form button {
+        padding: 10px;
+        background-color: #4a90e2;
+        border: none;
+        color: white;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    form button:hover {
+        background-color: #357ab8;
+    }
+
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    table {
+        width: 90%;
+        max-width: 1000px;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        border-collapse: collapse;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+
+    th {
+        background-color: #4a90e2;
+        color: white;
+        font-weight: bold;
+    }
+
+    tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .pagination {
+        margin: 20px 0;
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .pagination a {
+        padding: 10px 15px;
+        background-color: #4a90e2;
+        color: white;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+    .pagination a:hover {
+        background-color: #357ab8;
+    }
+
+    /* Botones dentro de la tabla */
+    button {
+        background-color: #50b948;
+        border: none;
+        padding: 8px 12px;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        font-size: 14px;
+    }
+
+    button:hover {
+        background-color: #3e8e3e;
+    }
+
+    /* Área que muestra info oculta */
+    #resultado-container p {
+        margin: 5px 0;
+    }
+
+    /* Responsive */
+    @media screen and (max-width: 600px) {
+        nav {
+            flex-direction: column;
+        }
+
+        table {
+            width: 100%;
+        }
+
+        th, td {
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        form {
+            width: 90%;
+        }
+    }
+</style>
+
+</head>
+<body>
+    <nav>
+        <a href="/alumnos_url">Alumnos</a>
+        <a href="/profesores_url">Profesores</a>
+        <a href="/clases_url">Clases</a>
+        <a href="/course_alumn_rel_url">Matrículas</a>
+    </nav>
+    <h1>Bienvenido al Sistema</h1>
+
+    <!-- Formulario de búsqueda para Alumnos -->
+    {% if alumnos_data %}
+    <form method="GET" action="/alumnos_url">
+        <input type="text" name="search_nombre" placeholder="Buscar por nombre" value="{{ search_nombre }}">
+        <input type="text" name="search_apellido" placeholder="Buscar por apellido" value="{{ search_apellido }}">
+        <button type="submit">Buscar</button>
+    </form>
+    {% endif %}
+    
+    {% if alumnos_data %}
+    <h2>Resultados de Alumnos</h2>
+    <p>Total de registros: {{ total_alumnos }}</p>
+    <div class="table-container">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Dirección</th>
+                <th>Cumpleaños</th>
+                <th>Última modificación</th>
+                <th>Saldo</th>
+                <th>Info</th>
+            </tr>
+            {% for alumno in alumnos_data %}
+            <tr>
+                <td>{{ alumno.id }}</td>
+                <td>{{ alumno.first_name }}</td>
+                <td>{{ alumno.last_name }}</td>
+                <td>{{ alumno.street_address}}</td>
+                <td>{{ alumno.birthday}}</td>
+                <td>{{ alumno.lastmodified}}</td>
+                <td>{{ alumno.saldo}}</td>
+                
+                 <td>
+                      <button id="btn-ver-info-{{ alumno.id }}" onclick="mostrarFormulario({{ alumno.id }})">Ver Info</button>
+
+                      <!-- Formulario de ingreso de contraseña -->
+                      <div id="formulario-info-{{ alumno.id }}" style="display: none; margin-top: 10px;">
+                        <input type="password" id="password-{{ alumno.id }}" placeholder="Ingrese la contraseña">
+                        <button onclick="verInfo({{ alumno.id }})">Confirmar</button>
+                        <p id="resultado-info-{{ alumno.id }}" style="margin-top: 5px; font-weight: bold;"></p>
+                      </div>
+
+                      <!-- Área donde se mostrará la información y la contraseña con botón para cerrar -->
+                      <div id="resultado-container-{{ alumno.id }}" style="display: none; margin-top: 10px;">
+                        <p id="resultado-info-text-{{ alumno.id }}" style="font-weight: bold; color: yellow;"></p>
+                        <p id="resultado-password-{{ alumno.id }}" style="font-weight: bold; color: white;"></p>
+                        <button onclick="cerrarInfo({{ alumno.id }})">Cerrar</button>
+                      </div>
+                    </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="/alumnos_url?page={{ page - 1 }}&search_nombre={{ search_nombre }}&search_apellido={{ search_apellido }}">Anterior</a>
+        {% endif %}
+        {% if has_next %}
+        <a href="/alumnos_url?page={{ page + 1 }}&search_nombre={{ search_nombre }}&search_apellido={{ search_apellido }}">Siguiente</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Formulario de búsqueda para Profesores -->
+    {% if profesores_data %}
+    <form method="GET" action="/profesores_url">
+        <input type="text" name="search_nombre" placeholder="Buscar por nombre" value="{{ search_nombre }}">
+        <button type="submit">Buscar</button>
+    </form>
+    {% endif %}
+
+    {% if profesores_data %}
+    <h2>Resultados de Profesores</h2>
+    <p>Total de registros: {{ total_profesores }}</p>
+    <div class="table-container">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Última modificación</th>
+            </tr>
+            {% for profesor in profesores_data %}
+            <tr>
+                <td>{{ profesor.id }}</td>
+                <td>{{ profesor.name }}</td>
+                <td>{{ profesor.lastmodified }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="/profesores_url?page={{ page - 1 }}&search_nombre={{ search_nombre }}">Anterior</a>
+        {% endif %}
+        {% if has_next %}
+        <a href="/profesores_url?page={{ page + 1 }}&search_nombre={{ search_nombre }}">Siguiente</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+{% if relaciones_data %}
+   <h2>Matriculación de Alumnos</h2>
+
+<form action="/matricular" method="POST">
+    <label for="id">ID del Alumno:</label>
+    <input type="number" id="id" name="id" required>
+
+    <label for="courxse_id">ID del Curso:</label>
+    <input type="number" id="course_id" name="course_id" required>
+
+    <button type="submit">Matricular</button>
+</form>
+{% endif %}
+
+
+{% if relaciones_data %}
+<h2>Buscar Cursos y Notas por ID de Alumno</h2>
+<form method="GET" action="/buscar_cursos_por_alumno">
+    <label for="alumn_id">ID del Alumno:</label>
+    <input type="number" id="alumn_id" name="alumn_id" required>
+    <button type="submit">Buscar</button>
+</form>
+{% endif %}
+
+<!-- Formulario de búsqueda para clases -->
+    {% if clases_data %}
+    <br>
+    <form method="GET" action="/clases_url">
+        <input type="text" name="search_nombre" placeholder="Buscar por nombre" value="{{ search_nombre }}">
+        <button type="submit">Buscar</button>
+    </form>
+    {% endif %}
+
+{% if clases_data %}
+    <h2>Resultados de Clases</h2>
+    <p>Total de registros: {{ total_clases }}</p>
+    <div class="table-container">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>ID Profesor</th>
+            </tr>
+            {% for clase in clases_data %}
+            <tr>
+                <td>{{ clase.id }}</td>
+                <td>{{ clase.name }}</td>
+                <td>{{ clase.teacher_id }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="/clases_url?page={{ page - 1 }}&search_nombre={{ search_nombre }}">Anterior</a>
+        {% endif %}
+        {% if has_next %}
+        <a href="/clases_url?page={{ page + 1 }}&search_nombre={{ search_nombre }}">Siguiente</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    
+    <!-- Formulario de búsqueda para relaciones -->
+    {% if relaciones_data %}
+    <br>
+    <h2>Buscar curso por id:</h2>
+    <form method="GET" action="/course_alumn_rel_url">
+        <input type="text" name="search_course_id" placeholder="Buscar por id" value="{{ search_course_id }}">
+        <button type="submit">Buscar</button>
+    </form>
+    {% endif %}
+    
+    {% if relaciones_data %}
+    <h2>Resultados de Clases</h2>
+    <p>Total de registros: {{ total_clases }}</p>
+    <div class="table-container">
+        <table>
+            <tr>
+                <th>ID Curso</th>
+                <th>ID Alumno</th>
+                <th>Nota</th>
+            </tr>
+            {% for relacion in relaciones_data %}
+            <tr>
+                <td>{{ relacion.course_id }}</td>
+                <td>{{ relacion.alumn_id }}</td>
+                <td>{{ relacion.nota }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="/course_alumn_rel_url?page={{ page - 1 }}&search_nombre={{ search_nombre }}">Anterior</a>
+        {% endif %}
+        {% if has_next %}
+        <a href="/course_alumn_rel_url?page={{ page + 1 }}&search_nombre={{ search_nombre }}">Siguiente</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+
+
+
+{% if relaciones_data %}
+<!-- Formulario para calcular la media de notas de un curso -->
+<h2>Calcular Media de Notas</h2>
+<form method="POST" action="/media_notas">
+    <label for="course_id_media">ID del Curso:</label>
+    <input type="number" id="course_id_media" name="course_id" required>
+    <button type="submit">Calcular Media</button>
+</form>
+{% endif %}
+
+{% if relaciones_data %}
+<!-- Formulario para actualizar la nota de un alumno -->
+<h2>Actualizar Nota de Alumno</h2>
+<form method="POST" action="/actualizar_notas">
+    <label for="alumn_id_update">ID del Alumno:</label>
+    <input type="number" id="alumn_id_update" name="alumn_id" required>
+    
+    <label for="course_id_update">ID del Curso:</label>
+    <input type="number" id="course_id_update" name="course_id" required>
+
+    <label for="nueva_nota">Nueva Nota:</label>
+    <input type="number" id="nueva_nota" name="nota" min="0" max="10" step="0.01" required>
+
+    <button type="submit">Actualizar Nota</button>
+</form>
+{% endif %}
+
+{% if relaciones_data %}
+<!-- Formulario para eliminar un alumno -->
+<h2>Eliminar Alumno</h2>
+<form method="POST" action="/eliminar_alumno">
+    <label for="alumn_id_delete">ID del Alumno:</label>
+    <input type="number" id="alumn_id_delete" name="id" required>
+    <button type="submit" style="background-color: red; color: white;">Eliminar Alumno</button>
+</form>
+{% endif %}
+
+{% if alumnos_data %}
+<h2>Subir Alumnos desde Excel</h2>
+<form method="POST" action="/insertar_alumnos_excel" enctype="multipart/form-data">
+    <input type="file" name="excel_file" accept=".xlsx" required>
+    <button type="submit">Subir</button>
+</form>
+{% endif %}
+
+
+{% if resultados %}
+    <h3>Cursos y notas del alumno {{ alumn_id }}</h3>
+    <table border="1">
+        <tr>
+            <th>ID del Curso</th>
+            <th>Nota</th>
+        </tr>
+        {% for course_id, nota in resultados %}
+        <tr>
+            <td>{{ course_id }}</td>
+            <td>{{ nota }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% elif resultados is not none %}
+    <p>No se encontraron cursos para el alumno con ID {{ alumn_id }}.</p>
+{% endif %}
+
+
+
+
+
+<h2>Mapa de Ubicaciones y Ruta Peatonal</h2>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+
+  <script>
+    const map = L.map('map').setView([40.4518, -3.7270], 17);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let routingControl = null;
+    let userLatLng = null;
+
+    // Obtener posición del usuario
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        userLatLng = [pos.coords.latitude, pos.coords.longitude];
+        L.marker(userLatLng).addTo(map).bindPopup("Tú estás aquí").openPopup();
+      });
+    }
+
+    // Obtener ubicaciones del backend
+    fetch('/api/locations')
+      .then(res => res.json())
+      .then(locations => {
+        locations.forEach(loc => {
+          const marker = L.marker([loc.lat, loc.lon]).addTo(map).bindPopup(loc.name);
+
+          // Al hacer clic en un marcador, dibujar ruta desde usuario
+          marker.on('click', () => {
+            if (!userLatLng) {
+              alert("No se pudo obtener tu ubicación.");
+              return;
+            }
+
+            // Si ya hay una ruta anterior, eliminarla
+            if (routingControl) {
+              map.removeControl(routingControl);
+            }
+
+            routingControl = L.Routing.control({
+              waypoints: [
+                L.latLng(userLatLng),
+                L.latLng(loc.lat, loc.lon)
+              ],
+              router: L.Routing.osrmv1({
+                serviceUrl: 'https://router.project-osrm.org/route/v1'
+              }),
+              lineOptions: {
+                styles: [{ color: 'blue', weight: 4 }]
+              },
+              createMarker: function () { return null; } // evita añadir marcadores extra
+            }).addTo(map);
+          });
+        });
+      });
+  </script>
+
+
+
+
+
+</body>
+
+
+<script>
+function mostrarFormulario(id) {
+    document.getElementById("btn-ver-info-" + id).style.display = "none"; // Oculta el botón "Ver Info"
+    document.getElementById("formulario-info-" + id).style.display = "block"; // Muestra el formulario
+    document.getElementById("resultado-info-" + id).innerText = ""; // Limpia mensajes anteriores
+    document.getElementById("resultado-info-" + id).style.display = "none"; // Oculta mensajes previos
+}
+
+function verInfo(id) {
+    let password = document.getElementById("password-" + id).value;
+    let resultadoContainer = document.getElementById("resultado-container-" + id);
+    let resultadoInfoText = document.getElementById("resultado-info-text-" + id);
+    let resultadoPassword = document.getElementById("resultado-password-" + id);
+    let resultadoInfo = document.getElementById("resultado-info-" + id);
+    let formulario = document.getElementById("formulario-info-" + id);
+
+    if (!password) {
+        resultadoInfo.innerText = "Ingrese una contraseña.";
+        resultadoInfo.style.color = "red";
+        resultadoInfo.style.display = "block";
+        return;
+    }
+
+    fetch('/ver_info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, password: password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.info) {
+            // Mostrar la información y la contraseña utilizada
+            resultadoInfoText.innerText = "Información: " + data.info;
+            resultadoInfoText.style.color = "black";
+
+            // Ocultar formulario y mostrar resultados
+            formulario.style.display = "none";
+            resultadoContainer.style.display = "block";
+        } else if (data.error) {
+            // Mostrar mensaje de contraseña incorrecta en el cuadro
+            resultadoInfo.innerText = "Contraseña incorrecta.";
+            resultadoInfo.style.color = "red";
+            resultadoInfo.style.display = "block";
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        resultadoInfo.innerText = "Error en la solicitud.";
+        resultadoInfo.style.color = "red";
+        resultadoInfo.style.display = "block";
+    });
+}
+
+function cerrarInfo(id) {
+    document.getElementById("resultado-container-" + id).style.display = "none"; // Oculta la info y la contraseña
+    document.getElementById("formulario-info-" + id).style.display = "none"; // Oculta el formulario
+    document.getElementById("password-" + id).value = ""; // Borra el input de la contraseña
+    document.getElementById("resultado-info-" + id).innerText = ""; // Limpia mensajes anteriores
+    document.getElementById("resultado-info-" + id).style.display = "none"; // Oculta el mensaje de error
+    document.getElementById("btn-ver-info-" + id).style.display = "inline"; // Muestra de nuevo el botón "Ver Info"
+}
+</script>
+
+
+</html>
