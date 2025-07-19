@@ -1,20 +1,22 @@
-from configparser import ConfigParser
+import os
+import urllib.parse as urlparse
 
-def load_config(filename='database.ini', section='postgresql'):
-    parser = ConfigParser()
-    parser.read(filename)
+def load_config():
+    # Render te da la conexión como DATABASE_URL
+    db_url = os.environ.get('DATABASE_URL')
 
-    # get section, default to postgresql
-    config = {}
-    if parser.has_section(section):
-        params = parser.items(section)
-        for param in params:
-            config[param[0]] = param[1]
-    else:
-        raise Exception('Section {0} not found in the {1} file'.format(section, filename))
+    if not db_url:
+        raise RuntimeError("DATABASE_URL no está definida en las variables de entorno")
 
-    return config
+    # Parsea la URL tipo postgres://user:pass@host:port/dbname
+    urlparse.uses_netloc.append("postgres")
+    parsed_url = urlparse.urlparse(db_url)
 
-if __name__ == '__main__':
-    config = load_config()
-    print(config)
+    return {
+        "dbname": parsed_url.path[1:],
+        "user": parsed_url.username,
+        "password": parsed_url.password,
+        "host": parsed_url.hostname,
+        "port": parsed_url.port
+    }
+
