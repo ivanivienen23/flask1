@@ -9,6 +9,7 @@ click==8.1.6
 flasgger==0.9.7.2.dev2
 pandas
 redis
+elasticsearch
 
 # --- Base de datos ---
 SQLAlchemy==1.4.50  # Motor ORM (usado por Flask-SQLAlchemy)
