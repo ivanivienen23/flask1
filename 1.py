@@ -603,27 +603,6 @@ def buscar_cursos_por_alumno():
 
 
 
-
-@app.route('/api/locations')
-def get_locations():
-    config = load_config()
-    try:
-        with psycopg2.connect(**config) as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    SELECT name, ST_Y(coordinates::geometry), ST_X(coordinates::geometry) FROM location
-                """)
-                rows = cur.fetchall()
-                locations = [
-                    {'name': row[0], 'lat': row[1], 'lon': row[2]}
-                    for row in rows
-                ]
-                return jsonify(locations)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-
 if __name__ == '__main__':
     app.run(debug=True)
 

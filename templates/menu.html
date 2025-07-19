@@ -4,11 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menú Flask</title>
-    
-    <title>Mapa de Ubicaciones y Ruta</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-    
+
     <style>
     
     #map { height: 90vh; width: 100%; }
@@ -457,78 +453,7 @@
         </tr>
         {% endfor %}
     </table>
-{% elif resultados is not none %}
-    <p>No se encontraron cursos para el alumno con ID {{ alumn_id }}.</p>
 {% endif %}
-
-
-
-
-
-<h2>Mapa de Ubicaciones y Ruta Peatonal</h2>
-  <div id="map"></div>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
-
-  <script>
-    const map = L.map('map').setView([40.4518, -3.7270], 17);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    let routingControl = null;
-    let userLatLng = null;
-
-    // Obtener posición del usuario
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        userLatLng = [pos.coords.latitude, pos.coords.longitude];
-        L.marker(userLatLng).addTo(map).bindPopup("Tú estás aquí").openPopup();
-      });
-    }
-
-    // Obtener ubicaciones del backend
-    fetch('/api/locations')
-      .then(res => res.json())
-      .then(locations => {
-        locations.forEach(loc => {
-          const marker = L.marker([loc.lat, loc.lon]).addTo(map).bindPopup(loc.name);
-
-          // Al hacer clic en un marcador, dibujar ruta desde usuario
-          marker.on('click', () => {
-            if (!userLatLng) {
-              alert("No se pudo obtener tu ubicación.");
-              return;
-            }
-
-            // Si ya hay una ruta anterior, eliminarla
-            if (routingControl) {
-              map.removeControl(routingControl);
-            }
-
-            routingControl = L.Routing.control({
-              waypoints: [
-                L.latLng(userLatLng),
-                L.latLng(loc.lat, loc.lon)
-              ],
-              router: L.Routing.osrmv1({
-                serviceUrl: 'https://router.project-osrm.org/route/v1'
-              }),
-              lineOptions: {
-                styles: [{ color: 'blue', weight: 4 }]
-              },
-              createMarker: function () { return null; } // evita añadir marcadores extra
-            }).addTo(map);
-          });
-        });
-      });
-  </script>
-
-
-
-
 
 </body>
 
