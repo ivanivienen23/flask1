@@ -10,6 +10,7 @@ flasgger==0.9.7.2.dev2
 pandas
 redis
 elasticsearch
+celery
 
 # --- Base de datos ---
 SQLAlchemy==1.4.50  # Motor ORM (usado por Flask-SQLAlchemy)
